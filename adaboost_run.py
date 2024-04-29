@@ -1043,9 +1043,10 @@ def main():
                     # loss is between 0 and datacount
                     loss /= datacount
                     dataset_loss[x_i] = loss
+                    gc.collect()
+                    torch.cuda.empty_cache()
 
-                gc.collect()
-                torch.cuda.empty_cache()
+                
                 x_i += 1
             mean_loss = dataset_loss.mean().item()
 
