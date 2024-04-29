@@ -30,7 +30,7 @@ import re
 import shutil
 from typing import Dict, List, Tuple
 import math
-
+import gc
 import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
@@ -905,6 +905,7 @@ def main():
             "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
         )
         args.n_gpu = torch.cuda.device_count()
+        print("n_gpu", args.n_gpu)
     else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
         torch.cuda.set_device(args.local_rank)
         device = torch.device("cuda", args.local_rank)
@@ -929,6 +930,9 @@ def main():
 
     # Set seed
     set_seed(args)
+
+    gc.collect()
+    torch.cuda.empty_cache()
 
     # Load pretrained model and tokenizer
     if args.local_rank not in [-1, 0]:

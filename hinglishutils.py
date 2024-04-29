@@ -7,7 +7,7 @@ import numpy as np
 import seaborn as sns
 import torch
 import tarfile
-from keras.preprocessing.sequence import pad_sequences
+from keras_preprocessing.sequence import pad_sequences
 from sklearn import preprocessing
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
