@@ -3,6 +3,7 @@ from torch.nn import CrossEntropyLoss, MSELoss
 
 import torch
 from transformers import PreTrainedModel, PretrainedConfig
+import gc
 
 
 class AdaboostConfig(PretrainedConfig):
@@ -41,5 +42,9 @@ class AdaboostModel(PreTrainedModel):
         masked_lm_loss = loss_fct(
             logits.view(-1, self.models[0].config.vocab_size), labels.view(-1)
         )
+
+        torch.cuda.empty_cache()
+        gc.collect()
+        torch.cuda.empty_cache()
 
         return masked_lm_loss, logits

@@ -1040,6 +1040,8 @@ def main():
                     loss /= datacount
                     dataset_loss[x_i] = loss
 
+                gc.collect()
+                torch.cuda.empty_cache()
                 x_i += 1
             mean_loss = dataset_loss.mean().item()
 
@@ -1141,6 +1143,10 @@ def evaluate_adaboosted(
             eval_loss += loss.mean().item()
             eval_steps += 1
             # TODO outputs is logits which is basically the weighted votes for each token
+        
+        gc.collect()
+        torch.cuda.empty_cache()
+
     eval_loss /= eval_steps
     perplexity = torch.exp(torch.tensor(eval_loss))
     print("Loss = " + str(eval_loss))
