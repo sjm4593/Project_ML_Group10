@@ -565,6 +565,10 @@ def train(
     if args.local_rank in [-1, 0]:
         tb_writer.close()
 
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
+
     return global_step, tr_loss / global_step
 
 
