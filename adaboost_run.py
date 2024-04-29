@@ -559,6 +559,10 @@ def train(
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
+
+        model = AdaboostModel(config, models, *inputs, **kwargs)
+        model.to(args.device)
+
         if args.max_steps > 0 and global_step > args.max_steps:
             train_iterator.close()
             break
@@ -1003,15 +1007,15 @@ def main():
         models_vote = []
         for submodel_i in range(args.n_models):
             model: PreTrainedModel = fetch_model(args, model_class, config)
-            model = model.to(args.device)
+            model_t = model.to(args.device)
 
             global_step, tr_loss = train(
-                args, train_dataset, dataset_weights, model, tokenizer
+                args, train_dataset, dataset_weights, model_t, tokenizer
             )
             logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
             # have to eval in batches due memory requirements being too large
-            model.eval()
+            model_t.eval()
             x_i = 0
 
             dataset_loss = np.zeros((datacount))
@@ -1031,7 +1035,7 @@ def main():
                 labels = labels.to(device)
 
                 with torch.no_grad():
-                    outputs = model(inputs, masked_lm_labels=labels)
+                    outputs = model_t(inputs, masked_lm_labels=labels)
                     loss = outputs[0].mean().item()
                     # loss is between 0 and datacount
                     loss /= datacount
@@ -1048,6 +1052,7 @@ def main():
 
             # model.save_pretrained(args)
             models.append(model)
+            del model_t
             models_vote.append(alpha)
         eval_dataset = load_and_cache_examples(args, tokenizer, evaluate=True)
         return evaluate_adaboosted(
