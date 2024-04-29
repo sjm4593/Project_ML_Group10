@@ -1,4 +1,5 @@
 from typing import List, Optional, Union
+from torch.nn import CrossEntropyLoss, MSELoss
 
 import torch
 from transformers import PreTrainedModel, PretrainedConfig
@@ -27,15 +28,18 @@ class AdaboostModel(PreTrainedModel):
         super().__init__(config, *inputs, **kwargs)
         self.models = models
 
-    def forward(
-        self,
-        inputs,
-    ):
+    def forward(self, inputs, labels):
         outputs = []
         for model, vote in zip(self.models, self.config.model_votes):
-            output: torch.Tensor = model(inputs)
-            (loss, logits, hidden_states, attentions) = output
+            output: torch.Tensor = model(inputs, labels=labels)
+            (loss, logits) = output
+
             outputs.append(logits * vote)
         logits = torch.sum(torch.stack(outputs), dim=0)
-        
-        return logits
+
+        loss_fct = CrossEntropyLoss()  # -100 index = padding token
+        masked_lm_loss = loss_fct(
+            logits.view(-1, self.models[0].config.vocab_size), labels.view(-1)
+        )
+
+        return masked_lm_loss, logits

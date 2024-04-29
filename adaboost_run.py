@@ -1025,16 +1025,20 @@ def main():
                 tqdm(dataloader, desc="Evaluating Ensemble Model")
             ):
                 # Don't use mask_tokens
-                batch: torch.Tensor = batch.to(device)
+                inputs, labels = mask_tokens(batch, tokenizer, args)
+                inputs: torch.Tensor = inputs.to(device)
+                labels = labels.to(device)
+
                 with torch.no_grad():
-                    outputs = model(batch, masked_lm_labels=batch)
+                    outputs = model(inputs, masked_lm_labels=labels)
                     loss = outputs[0].mean().item()
                     # loss is between 0 and datacount
-                    # loss /= datacount
+                    loss /= datacount
                     dataset_loss[x_i] = loss
 
                 x_i += 1
-            mean_loss = dataset_loss.mean()
+            mean_loss = dataset_loss.mean().item()
+
             alpha = math.log((1 - mean_loss) / mean_loss) / 2
 
             dataset_loss *= -alpha
@@ -1044,7 +1048,10 @@ def main():
             models.append(model)
             models_vote.append(alpha)
 
-        evaluate_adaboosted(args, config, models, models_vote, train_dataset, collate)
+        return evaluate_adaboosted(
+            args, tokenizer, config, models, models_vote, train_dataset, collate
+        )
+
     else:
         model = fetch_model(model_class)
         model.to(args.device)
@@ -1073,36 +1080,38 @@ def main():
         model.to(args.device)
 
     # Evaluation
-    results = {}
-    if args.do_eval and args.local_rank in [-1, 0]:
-        checkpoints = [args.output_dir]
-        if args.eval_all_checkpoints:
-            checkpoints = list(
-                os.path.dirname(c)
-                for c in sorted(
-                    glob.glob(args.output_dir + "/**/" + WEIGHTS_NAME, recursive=True)
-                )
-            )
-            logging.getLogger("transformers.modeling_utils").setLevel(
-                logging.WARN
-            )  # Reduce logging
-        logger.info("Evaluate the following checkpoints: %s", checkpoints)
-        for checkpoint in checkpoints:
-            global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
-            prefix = (
-                checkpoint.split("/")[-1] if checkpoint.find("checkpoint") != -1 else ""
-            )
+    # results = {}
+    # if args.do_eval and args.local_rank in [-1, 0]:
+    #     checkpoints = [args.output_dir]
+    #     if args.eval_all_checkpoints:
+    #         checkpoints = list(
+    #             os.path.dirname(c)
+    #             for c in sorted(
+    #                 glob.glob(args.output_dir + "/**/" + WEIGHTS_NAME, recursive=True)
+    #             )
+    #         )
+    #         logging.getLogger("transformers.modeling_utils").setLevel(
+    #             logging.WARN
+    #         )  # Reduce logging
+    #     logger.info("Evaluate the following checkpoints: %s", checkpoints)
+    #     for checkpoint in checkpoints:
+    #         global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
+    #         prefix = (
+    #             checkpoint.split("/")[-1] if checkpoint.find("checkpoint") != -1 else ""
+    #         )
 
-            model = model_class.from_pretrained(checkpoint)
-            model.to(args.device)
-            result = evaluate(args, model, tokenizer, prefix=prefix)
-            result = dict((k + "_{}".format(global_step), v) for k, v in result.items())
-            results.update(result)
+    #         model = model_class.from_pretrained(checkpoint)
+    #         model.to(args.device)
+    #         result = evaluate(args, model, tokenizer, prefix=prefix)
+    #         result = dict((k + "_{}".format(global_step), v) for k, v in result.items())
+    #         results.update(result)
 
     return results
 
 
-def evaluate_adaboosted(args, config, models, models_vote, train_dataset, collate):
+def evaluate_adaboosted(
+    args, tokenizer, config, models, models_vote, train_dataset, collate
+):
     dataloader = DataLoader(
         train_dataset,
         sampler=SequentialSampler(train_dataset),
@@ -1113,13 +1122,26 @@ def evaluate_adaboosted(args, config, models, models_vote, train_dataset, collat
     adaboost_config = AdaboostConfig([config] * len(models), model_votes=models_vote)
     adaboost = AdaboostModel(adaboost_config, models=models)
 
+    eval_loss = 0
+    eval_steps = 0
     for step, batch in enumerate(tqdm(dataloader, desc="Evaluating Ensemble Model")):
         # Don't use mask_tokens
-        batch: torch.Tensor = batch.to(args.device)
+        inputs, labels = (
+            mask_tokens(batch, tokenizer, args) if args.mlm else (batch, batch)
+        )
+        inputs: torch.Tensor = inputs.to(args.device)
+        labels = labels.to(args.device)
+
         with torch.no_grad():
-            outputs = adaboost(batch)
+            loss, logits = adaboost(inputs, labels)
+            eval_loss += loss.mean().item()
+            eval_steps += 1
             # TODO outputs is logits which is basically the weighted votes for each token
-            print(outputs)
+    eval_loss /= eval_steps
+    perplexity = torch.exp(torch.tensor(eval_loss))
+    print("Loss = " + str(eval_loss))
+    print("Perplexity = " + str(perplexity.item()))
+    return {"Loss": eval_loss, "Perplexity": perplexity}
 
 
 def fetch_model(args, model_class, config):
