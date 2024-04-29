@@ -1142,10 +1142,18 @@ def evaluate_adaboosted(
             loss, logits = adaboost(inputs, labels)
             eval_loss += loss.mean().item()
             eval_steps += 1
+
+            del inputs
+            del labels
+
             # TODO outputs is logits which is basically the weighted votes for each token
-        
-        gc.collect()
-        torch.cuda.empty_cache()
+
+    del adaboost
+    del adaboost_config
+    del models
+    del models_vote
+    gc.collect()
+    torch.cuda.empty_cache()
 
     eval_loss /= eval_steps
     perplexity = torch.exp(torch.tensor(eval_loss))
@@ -1168,4 +1176,5 @@ def fetch_model(args, model_class, config):
 
 
 if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     main()
