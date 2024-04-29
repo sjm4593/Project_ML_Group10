@@ -524,7 +524,8 @@ def train(
                     logging_loss = tr_loss
 
                 if (
-                    args.local_rank in [-1, 0]
+                    False
+                    and args.local_rank in [-1, 0]
                     and args.save_steps > 0
                     and global_step % args.save_steps == 0
                 ):
@@ -1045,11 +1046,12 @@ def main():
             dataset_weights *= np.exp(dataset_loss)
             dataset_weights /= np.linalg.norm(dataset_weights)
 
+            # model.save_pretrained(args)
             models.append(model)
             models_vote.append(alpha)
-
+        eval_dataset = load_and_cache_examples(args, tokenizer, evaluate=True)
         return evaluate_adaboosted(
-            args, tokenizer, config, models, models_vote, train_dataset, collate
+            args, tokenizer, config, models, models_vote, eval_dataset, collate
         )
 
     else:
