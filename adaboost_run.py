@@ -555,6 +555,10 @@ def train(
                         "Saving optimizer and scheduler states to %s", output_dir
                     )
 
+                del model
+                gc.collect()
+                torch.cuda.empty_cache()
+
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
@@ -565,11 +569,7 @@ def train(
     if args.local_rank in [-1, 0]:
         tb_writer.close()
 
-    logger.info(torch.cuda.memory_stats(args.device))
-    del model
-    gc.collect()
-    torch.cuda.empty_cache()
-    logger.info(torch.cuda.memory_stats(args.device))
+
 
     return global_step, tr_loss / global_step
 
