@@ -67,6 +67,7 @@ from transformers import (
     RobertaTokenizer,
     get_linear_schedule_with_warmup,
 )
+from adaboost_model import *
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -1043,7 +1044,7 @@ def main():
             models.append(model)
             models_vote.append(alpha)
 
-        evaluate_adaboosted(args, models, models_vote, train_dataset, collate)
+        evaluate_adaboosted(args, config, models, models_vote, train_dataset, collate)
     else:
         model = fetch_model(model_class)
         model.to(args.device)
@@ -1101,7 +1102,7 @@ def main():
     return results
 
 
-def evaluate_adaboosted(args, models, models_vote, train_dataset, collate):
+def evaluate_adaboosted(args, config, models, models_vote, train_dataset, collate):
     dataloader = DataLoader(
         train_dataset,
         sampler=SequentialSampler(train_dataset),
@@ -1109,18 +1110,16 @@ def evaluate_adaboosted(args, models, models_vote, train_dataset, collate):
         shuffle=False,
         collate_fn=collate,
     )
+    adaboost_config = AdaboostConfig([config] * len(models), model_votes=models_vote)
+    adaboost = AdaboostModel(adaboost_config, models=models)
+
     for step, batch in enumerate(tqdm(dataloader, desc="Evaluating Ensemble Model")):
         # Don't use mask_tokens
         batch: torch.Tensor = batch.to(args.device)
         with torch.no_grad():
-
-            model_votes = []
-            for model, vote in zip(models, models_vote):
-                outputs = model(batch, masked_lm_labels=batch)
-                logits = outputs[1]
-                model_votes.append(logits)
-
-            decision = torch.sum(torch.stack(model_votes), dim=0)
+            outputs = adaboost(batch)
+            # TODO outputs is logits which is basically the weighted votes for each token
+            print(outputs)
 
 
 def fetch_model(args, model_class, config):
