@@ -5,3 +5,6 @@ numpy==1.19.2
 pandas==1.1.2
 seaborn==0.11.0
 tqdm==4.49.0
+pytorch==1.6.0
+# cudatoolkit=10.2 # need to call this with " conda install pytorch==1.6.0 cudatoolkit==10.2 -c pytorch "
+
