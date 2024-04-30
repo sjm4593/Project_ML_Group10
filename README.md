@@ -1,41 +1,78 @@
-# Hinglish
-Tools and Data
+# Modified Hinglish Sentiment Classifier
 
-[Data and Model files](https://drive.google.com/drive/folders/12qEbxbefBY24-YqahVV0v7q_IFyxz3L8?usp=sharing)
+<img src="./Hinglish-Logo.png" width="500">
 
-![Logo](./Hinglish-Logo.png)
+## Environment setup
 
+```bash
+conda create -n hinglish python=3.8
+```
 
-Approach | LM Perplexity | Classifier F1 |
----| --- | ---|
-BERT|8.2 | 0.63|
-DistilBERT|6.5 | 0.63|
-ULMFIT | 21 | 0.61|
-RoBERTa| 7.54 | 0.64|
+```bash
+conda activate hinglish
+```
 
-## Model Performance
+```bash
+conda install --file conda_requirements.txt
+```
 
-Base LM | Dataset|  Accuracy |  Precision |  Recall |  F1| LM Perplexity|
---|--|--|--|--|--|--|
-bert-base-multilingual-cased | Test |  0.688| 0.698| 0.686|  0.687| 8.2|
-bert-base-multilingual-cased | Valid |  0.62| 0.592 |  0.605|  0.55| 8.2|
-distilbert-base-uncased | Test| 0.693| 0.694| 0.703| 0.698| 6.51|
-distilbert-base-uncased | Valid| 0.607| 0.614| 0.600| 0.592| 6.51|
-distilbert-base-multilingual-cased | Test| 0.612| 0.615| 0.616| 0.616| 8.1|
-distilbert-base-multilingual-cased | Valid| 0.55| 0.531| 0.537| 0.495| 8.1|
-roberta-base | Test| 0.630| 0.629| 0.644| 0.635| 7.54|
-roberta-base | Valid| 0.60| 0.617| 0.607| 0.595| 7.54|
-Ensemble |  Test| 0.714| 0.718| 0.718| 0.718| |
+```bash
+pip install -r pip_requirements.txt
+```
 
-## Ensemble Performace 
+```bash
+conda install -y pytorch==1.6.0 cudatoolkit=10.2 -c pytorch -c nvidia
+```
 
-Model | Accuracy  | Precision  | Recall  | F1 | Config | Link to Model and output files |
---|--|--|--|--|--|--|
-BERT | 0.68866 | 0.69821 | 0.68608 | 0.6875 | Batch Size - 16<br>Attention Dropout - 0.4<br>Learning Rate - 5e-07<br>Adam epsilon - 1e-08<br>Hidden Dropout Probability - 0.3<br>Epochs - 3 | [BERT](https://drive.google.com/drive/folders/1HAYoWX3zG7XEMaSf74K5dKvaBJdwE6U9?usp=sharing) |
-DistilBert | 0.69333 | 0.69496 | 0.70379 | 0.6982 | Batch Size - 16<br>Attention Dropout - 0.6<br>Learning Rate - 3e-05<br>Adam epsilon - 1e-08<br>Hidden Dropout Probability - 0.6<br>Epochs - 3 | [DistilBert](https://drive.google.com/drive/folders/1t_2XqwtRpui5l1prZsmCaArmqzPjPGob?usp=sharing) |
-EnsembleBert1 | 0.69233 | 0.70236 | 0.69064 | 0.68952 | Batch Size - 4<br>Attention Dropout - 0.7<br>Learning Rate - 5.01e-05<br>Adam epsilon - 4.79e-05<br>Hidden Dropout Probability - 0.1<br>Epochs - 3 | [EnsembleBert1](https://drive.google.com/drive/folders/1-ais3Y04SWFUYHF4KkUAJMDUEdsfu_GB?usp=sharing) |
-EnsembleBert2 | 0.691 | 0.7009 | 0.6889 | 0.68872 | Batch Size - 4<br>Attention Dropout - 0.6<br>Learning Rate - 5.13e-05<br>Adam epsilon - 9.72e-05<br>Hidden Dropout Probability - 0.2<br>Epochs - 3 | [EnsembleBert2](https://drive.google.com/drive/folders/1-rpWWvVruIp_WA0mveU2zHn82fZ5Mcl8?usp=sharing) |
-EnsembleDistilBert1 | 0.70166 | 0.70377 | 0.70976 | 0.7061 | Batch Size - 16<br>Attention Dropout - 0.8<br>Learning Rate - 3.02e-05<br>Adam epsilon - 9.35e-05<br>Hidden Dropout Probability - 0.4<br>Epochs - 3 | [EnsembleDistilBert1](https://drive.google.com/drive/folders/1jqcXPLysVSVCOh5ySKa-fMRIWA_djT_P?usp=sharing) |
-EnsembleDistilBert2 | 0.689 | 0.691 | 0.69666 | 0.69335 | Batch Size - 4<br>Attention Dropout - 0.6<br>Learning Rate - 5.13e-05<br>Adam epsilon - 9.72e-05<br>Hidden Dropout Probability - 0.2<br>Epochs - 3 | [EnsembleDistilBert2](https://drive.google.com/drive/folders/1-3mwr1v3OBzlSrFxOKpec8ERrqHTPaZo?usp=sharing) |
-EnsembleDistilBert3 | 0.69366 | 0.69538 | 0.70557 | 0.69905 | Batch Size - 16<br>Attention Dropout - 0.4<br>Learning Rate - 4.74e-05<br>Adam epsilon - 4.09e-05<br>Hidden Dropout Probability - 0.6<br>Epochs - 3 | [EnsembleDistilBert3](https://drive.google.com/drive/folders/1-KHIKd425T98r0lMjKCv0X7GKaU7K9D5?usp=sharing) |
-Ensemble | 0.71466 | 0.71867 | 0.71853 | 0.7182 | NA | [Ensemble](https://drive.google.com/drive/folders/12Iz0xfxszNMkQE8hxO6ajeTBACoKsWUW?usp=sharing) |
+## Data and Model files
+
+Run this in a terminal and save these in the root directory
+```python
+from hinglishutils import get_files_from_gdrive
+#%%
+get_files_from_gdrive("https://drive.google.com/file/d/1-Ki6v1a1jF79qx22gM6JlX1NVD4txTdn/view?usp=sharing", 
+                      "train_lm.txt")
+
+get_files_from_gdrive("https://drive.google.com/file/d/1-MRU7w2_la36qopO8Ob4BoCynOAZc0sZ/view?usp=sharing", 
+                      "dev_lm.txt")
+
+get_files_from_gdrive("https://drive.google.com/file/d/1-NqiU-tL5hW59MFtUXh1exivRokZKfs7/view?usp=sharing", 
+                      "test_lm.txt")
+#%%
+get_files_from_gdrive("https://drive.google.com/file/d/1k4N0JlVOP-crIcCtC6ZI5Va8X3s2-r_D/view?usp=sharing", 
+                      "test_labels_hinglish.txt")
+#%%
+get_files_from_gdrive("https://drive.google.com/file/d/1-FykBMdD7erRhr9370thtySNm6QvnQAA/view?usp=sharing", 
+                      "train.json")
+
+get_files_from_gdrive("https://drive.google.com/file/d/1-F6o4lSub2D-_iCoNPvxxnCiPQ82VJjG/view?usp=sharing", 
+                      "test.json")
+
+get_files_from_gdrive("https://drive.google.com/file/d/1-Esp4UtIZwX44eI8qndngweKZ6p9GLKT/view?usp=sharing", 
+                      "valid.json")
+
+get_files_from_gdrive("https://drive.google.com/file/d/17wFvtj9tfp4QI6FrErAyqL9H1s5-lZkR/view?usp=sharing", 
+                      "final_test.json")
+```
+
+Download the pretrained models directly from Google drive, and extract the tarballs in the root directory using:
+
+https://drive.google.com/file/d/1-0bVrbhQ3nJhwmgIdhuL-ws4V9zuFpMF/view?usp=sharing
+https://drive.google.com/file/d/1I1JXDg8ZzuuzXMN1X986oCeOjSxqZj7C/view?usp=sharing
+https://drive.google.com/file/d/1TTJzXi0dWYHVCrZM8vWoZzKWPfIF0ErB/view?usp=sharing
+
+```bash
+tar -xvf filename.tar.gz
+```
+
+Run a small version using:
+
+```bash
+python adaboost_run.py --output_dir=bert --model_type=bert --model_name_or_path=bert-base-multilingual-cased --do_train --train_data_file=ada_data_small.txt --do_eval --eval_data_file=ada_data_small.txt --mlm  --num_train_epochs 1 --save_total_limit 2 --n_models 5 --overwrite_output_dir
+```
+
+For the full training, run (replace GPU_INDICES_HERE with the GPU indices you want to use with CUDA):
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU_INDICES_HERE python adaboost_run.py --output_dir=bert --model_type=distilbert  --do_train --model_name_or_path=distilbert-base-cased --train_data_file=train_lm.txt --do_eval --eval_data_file=test_lm.txt --mlm  --num_train_epochs 5 --save_total_limit 10 --n_models 1 --overwrite_output_dir --per_gpu_train_batch_size=4
+```
